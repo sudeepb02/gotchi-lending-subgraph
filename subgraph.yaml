@@ -1,4 +1,4 @@
-specVersion: 0.0.1
+specVersion: 0.0.2
 schema:
   file: ./schema.graphql
 dataSources:
@@ -6,8 +6,9 @@ dataSources:
     name: AavegotchiDiamond
     network: matic
     source:
-      address: "0x3a539E556628931428c499D73CC8EFaD7FFbe3eB"
+      address: "0x86935f11c86623dec8a25696e1c19a8659cbf95d"
       abi: AavegotchiDiamond
+      startBlock: 26426804
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

@@ -1,5 +1,36 @@
-type ExampleEntity @entity {
+type Account @entity {
   id: ID!
-  count: BigInt!
-  listingId: BigInt! # uint32
+  gotchisLent: [GotchiLending!] @derivedFrom(field: "lender")
+  gotchisBorrowed: [GotchiLending!] @derivedFrom(field: "borrower")
+}
+
+type GotchiLending @entity {
+  id: ID!
+  gotchiId: BigInt!
+
+  rentDuration: BigInt!
+  period: BigInt!
+  startTimestamp: BigInt!
+  endTimestamp: BigInt!
+
+  splitOwner: BigInt
+  splitBorrower: BigInt
+  splitOther: BigInt
+
+  whitelist: Whitelist
+
+  borrower: Account
+  lender: Account
+  originalOwner: Account
+  thirdPartyAddress: Account
+
+  cancelled: Boolean!
+  completed: Boolean!
+  lastClaimed: BigInt
+}
+
+type Whitelist @entity {
+  id: ID!
+  name: String!
+  members: [Bytes!]!
 }
