@@ -8,25 +8,24 @@ type GotchiLending @entity {
   id: ID!
   gotchiId: BigInt!
 
-  rentDuration: BigInt!
-  period: BigInt!
+  agreedPeriod: BigInt!   # Period set in the contract
+  actualPeriod: BigInt!   # Actual time the borrower had the gotchi
   startTimestamp: BigInt!
   endTimestamp: BigInt!
 
-  splitOwner: BigInt
-  splitBorrower: BigInt
-  splitOther: BigInt
+  upfrontCost: BigInt
+  splitOwner: Int
+  splitBorrower: Int
+  splitOther: Int
 
   whitelist: Whitelist
 
-  borrower: Account
   lender: Account
-  originalOwner: Account
+  borrower: Account
   thirdPartyAddress: Account
 
   cancelled: Boolean!
   completed: Boolean!
-  lastClaimed: BigInt
 }
 
 type Whitelist @entity {
