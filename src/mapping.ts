@@ -23,6 +23,7 @@ export function handleGotchiLendingEnd(event: GotchiLendingEnd): void {
   lending.completed = true
   lending.endTimestamp = event.block.timestamp
   lending.actualPeriod = event.block.timestamp.minus(lending.startTimestamp)
+  lending.save()
 }
 
 export function handleGotchiLendingExecute(event: GotchiLendingExecute): void {
@@ -31,6 +32,15 @@ export function handleGotchiLendingExecute(event: GotchiLendingExecute): void {
     lending = createNewGotchiLending(event.params.listingId, event.address)
   }
 
+  let contract = AavegotchiDiamond.bind(event.address)
+  let response = contract.try_getGotchiLendingListingInfo(event.params.listingId);
+  if (!response.reverted) {
+    let listingResult = response.value.value0;
+    createNewUser(listingResult.borrower.toHex())
+    lending.borrower = listingResult.borrower.toHex()
+  }
+
+  lending.started = true
   lending.startTimestamp = event.block.timestamp
   lending.save()
 }
@@ -67,6 +77,7 @@ function createNewGotchiLending(listingId: BigInt, eventAddress: Address): Gotch
   lending.borrower = listingResult.borrower.toHex();
   lending.thirdPartyAddress = listingResult.thirdParty.toHex();
 
+  lending.started = false
   lending.cancelled = false
   lending.completed = false
 
