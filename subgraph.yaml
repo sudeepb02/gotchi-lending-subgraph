@@ -27,4 +27,6 @@ dataSources:
           handler: handleGotchiLendingEnd
         - event: GotchiLendingExecute(indexed uint32)
           handler: handleGotchiLendingExecute
+        - event: GotchiLendingClaim(indexed uint32,address[],uint256[])
+          handler: handleGotchiLendingClaim
       file: ./src/mapping.ts

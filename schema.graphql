@@ -27,6 +27,11 @@ type GotchiLending @entity {
   started: Boolean!
   cancelled: Boolean!
   completed: Boolean!
+
+  claimedFUD: BigInt!
+  claimedFOMO: BigInt!
+  claimedALPHA: BigInt!
+  claimedKEK: BigInt!
 }
 
 type Whitelist @entity {
