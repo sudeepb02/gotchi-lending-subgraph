@@ -29,4 +29,10 @@ dataSources:
           handler: handleGotchiLendingExecute
         - event: GotchiLendingClaim(indexed uint32,address[],uint256[])
           handler: handleGotchiLendingClaim
+        - event: GotchiLendingCancel(indexed uint32,uint256)
+          handler: handleGotchiLendingCancel
+        - event: WhitelistCreated(indexed uint32)
+          handler: handleWhitelistCreated
+        - event: WhitelistUpdated(indexed uint32)
+          handler: handleWhitelistUpdated
       file: ./src/mapping.ts

@@ -1,10 +1,13 @@
-import { BigInt, Address, log } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, Address, log, ethereum } from "@graphprotocol/graph-ts";
 import {
   AavegotchiDiamond,
   GotchiLendingAdd,
   GotchiLendingEnd,
   GotchiLendingExecute,
   GotchiLendingClaim,
+  GotchiLendingCancel,
+  WhitelistCreated,
+  WhitelistUpdated,
 } from "../generated/AavegotchiDiamond/AavegotchiDiamond";
 import { Account, GotchiLending, Whitelist } from "../generated/schema";
 
@@ -58,7 +61,7 @@ export function handleGotchiLendingExecute(event: GotchiLendingExecute): void {
 }
 
 export function handleGotchiLendingClaim(event: GotchiLendingClaim): void {
-  log.info("Handle gotchi lending triggered ", [])
+  log.info("Handle gotchi lending triggered ", []);
   let lending = GotchiLending.load(event.params.listingId.toString());
   // Lending will always exists on Lending claim event trigger
   if (lending) {
@@ -68,18 +71,38 @@ export function handleGotchiLendingClaim(event: GotchiLendingClaim): void {
       const token = tokens[index];
       const amount = amounts[index];
       if (token.equals(FUD)) {
-          lending.claimedFUD = lending.claimedFUD.plus(amount);
-      } else if(token.equals(FOMO)) {
+        lending.claimedFUD = lending.claimedFUD.plus(amount);
+      } else if (token.equals(FOMO)) {
         lending.claimedFOMO = lending.claimedFOMO.plus(amount);
-      } else if(token.equals(ALPHA)) {
+      } else if (token.equals(ALPHA)) {
         lending.claimedALPHA = lending.claimedALPHA.plus(amount);
-      } else if(token.equals(KEK)) {
+      } else if (token.equals(KEK)) {
         lending.claimedKEK = lending.claimedKEK.plus(amount);
       }
-      log.info("Claimed {} amount of token {}", [amount.toString(), token.toHexString()])
+      log.info("Claimed {} amount of token {}", [
+        amount.toString(),
+        token.toHexString(),
+      ]);
       lending.save();
     }
   }
+}
+
+export function handleGotchiLendingCancel(event: GotchiLendingCancel): void {
+  // let lending = getOrCreateGotchiLending(event.params.listingId);
+  let lending = GotchiLending.load(event.params.listingId.toString());
+  if (lending) {
+    lending.cancelled = true;
+    lending.save();
+  }
+}
+
+export function handleWhitelistCreated(event: WhitelistCreated): void {
+  createOrUpdateWhitelist(event.params.whitelistId, event);
+}
+
+export function handleWhitelistUpdated(event: WhitelistUpdated): void {
+  createOrUpdateWhitelist(event.params.whitelistId, event);
 }
 
 function createNewGotchiLending(
@@ -97,6 +120,7 @@ function createNewGotchiLending(
   let gotchiResult = response.value.value1;
 
   lending.gotchiId = gotchiResult.tokenId;
+  lending.gotchiBRS = gotchiResult.baseRarityScore;
 
   lending.agreedPeriod = listingResult.period;
   lending.actualPeriod = BigInt.zero();
@@ -108,7 +132,8 @@ function createNewGotchiLending(
   lending.splitBorrower = listingResult.revenueSplit[1];
   lending.splitOther = listingResult.revenueSplit[2];
 
-  // lending.whitelist =
+  lending.whitelist = listingResult.whitelistId.toString()
+
   createNewUser(listingResult.lender.toHex());
   createNewUser(listingResult.borrower.toHex());
   createNewUser(listingResult.thirdParty.toHex());
@@ -126,7 +151,7 @@ function createNewGotchiLending(
   lending.claimedALPHA = BigInt.zero();
   lending.claimedKEK = BigInt.zero();
 
-  lending.save()
+  lending.save();
   return lending;
 }
 
@@ -136,4 +161,33 @@ function createNewUser(userAddress: string): void {
     account = new Account(userAddress);
     account.save();
   }
+}
+
+export function createOrUpdateWhitelist(
+  id: BigInt,
+  event: ethereum.Event
+): Whitelist | null {
+  let contract = AavegotchiDiamond.bind(event.address);
+  let response = contract.try_getWhitelist(id);
+
+  if (response.reverted) {
+    return null;
+  }
+
+  let result = response.value;
+
+  let members = result.addresses;
+  let name = result.name;
+
+  let whitelist = Whitelist.load(id.toString());
+  if (!whitelist) {
+    whitelist = new Whitelist(id.toString());
+    whitelist.ownerAddress = result.owner;
+    whitelist.name = name;
+  }
+
+  whitelist.members = members.map<Bytes>((e) => e);
+
+  whitelist.save();
+  return whitelist;
 }

@@ -7,6 +7,7 @@ type Account @entity {
 type GotchiLending @entity {
   id: ID!
   gotchiId: BigInt!
+  gotchiBRS: BigInt!
 
   agreedPeriod: BigInt!   # Period set in the contract
   actualPeriod: BigInt!   # Actual time the borrower had the gotchi
@@ -38,4 +39,5 @@ type Whitelist @entity {
   id: ID!
   name: String!
   members: [Bytes!]!
+  ownerAddress: Bytes!
 }
