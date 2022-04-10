@@ -42,4 +42,11 @@ type Whitelist @entity {
   name: String!
   members: [Bytes!]!
   ownerAddress: Bytes!
+
+  claimedFUD: BigInt!
+  claimedFOMO: BigInt!
+  claimedALPHA: BigInt!
+  claimedKEK: BigInt!
+  fudEquivalent: BigInt!
+  totalAlchemica: BigInt!
 }
