@@ -72,17 +72,22 @@ export function handleGotchiLendingClaim(event: GotchiLendingClaim): void {
       const amount = amounts[index];
       if (token.equals(FUD)) {
         lending.claimedFUD = lending.claimedFUD.plus(amount);
+        lending.fudEquivalent = lending.fudEquivalent.plus(amount);
       } else if (token.equals(FOMO)) {
         lending.claimedFOMO = lending.claimedFOMO.plus(amount);
+        lending.fudEquivalent = lending.fudEquivalent.plus(amount.times(BigInt.fromI32(2)));
       } else if (token.equals(ALPHA)) {
         lending.claimedALPHA = lending.claimedALPHA.plus(amount);
+        lending.fudEquivalent = lending.fudEquivalent.plus(amount.times(BigInt.fromI32(4)));
       } else if (token.equals(KEK)) {
         lending.claimedKEK = lending.claimedKEK.plus(amount);
+        lending.fudEquivalent = lending.fudEquivalent.plus(amount.times(BigInt.fromI32(10)));
       }
       log.info("Claimed {} amount of token {}", [
         amount.toString(),
         token.toHexString(),
       ]);
+      lending.totalAlchemica = lending.totalAlchemica.plus(amount);
       lending.save();
     }
   }
@@ -150,6 +155,8 @@ function createNewGotchiLending(
   lending.claimedFOMO = BigInt.zero();
   lending.claimedALPHA = BigInt.zero();
   lending.claimedKEK = BigInt.zero();
+  lending.fudEquivalent = BigInt.zero();
+  lending.totalAlchemica = BigInt.zero();
 
   lending.save();
   return lending;

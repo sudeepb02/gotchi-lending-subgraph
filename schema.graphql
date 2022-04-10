@@ -33,6 +33,8 @@ type GotchiLending @entity {
   claimedFOMO: BigInt!
   claimedALPHA: BigInt!
   claimedKEK: BigInt!
+  fudEquivalent: BigInt!
+  totalAlchemica: BigInt!
 }
 
 type Whitelist @entity {
