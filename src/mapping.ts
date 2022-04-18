@@ -33,6 +33,15 @@ export function handleGotchiLendingEnd(event: GotchiLendingEnd): void {
   lending.endTimestamp = event.block.timestamp;
   lending.actualPeriod = event.block.timestamp.minus(lending.startTimestamp);
   lending.save();
+
+  let borrower = Account.load(lending.borrower);
+  if (borrower) {
+    if (lending.fudEquivalent.ge(BigInt.fromI32(5))) {
+      borrower.timesBorrowedAndEarned = borrower.timesBorrowedAndEarned.plus(BigInt.fromI32(1));
+    }
+    borrower.currentBorrowedCount = borrower.currentBorrowedCount.minus(BigInt.fromI32(1));
+    borrower.save();
+  }
 }
 
 export function handleGotchiLendingExecute(event: GotchiLendingExecute): void {
@@ -45,7 +54,23 @@ export function handleGotchiLendingExecute(event: GotchiLendingExecute): void {
   let response = contract.try_getGotchiLendingListingInfo(event.params.listingId);
   if (!response.reverted) {
     let listingResult = response.value.value0;
+
+    // Borrower
     createNewUser(listingResult.borrower.toHex());
+    let borrower = Account.load(listingResult.borrower.toHex());
+    if (borrower) {
+      borrower.timesBorrowed = borrower.timesBorrowed.plus(BigInt.fromI32(1));
+      borrower.currentBorrowedCount = borrower.currentBorrowedCount.plus(BigInt.fromI32(1));
+      borrower.save();
+    }
+
+    //Lender
+    createNewUser(listingResult.originalOwner.toHex());
+    let lender = Account.load(listingResult.originalOwner.toHex());
+    if (lender) {
+      lender.timesLent = lender.timesLent.plus(BigInt.fromI32(1));
+      lender.save();
+    }
     lending.borrower = listingResult.borrower.toHex();
   }
 
@@ -63,9 +88,7 @@ export function handleGotchiLendingClaim(event: GotchiLendingClaim): void {
   updateGotchiLendingAmounts(event.params.listingId, tokens, amounts);
 
   let whitelistId = getWhitelistIdFromListing(event.params.listingId, event.address);
-  if (whitelistId !== BigInt.zero()) {
-    updateWhitelistLendingAmounts(event.params.listingId, tokens, amounts);
-  }
+  updateWhitelistLendingAmounts(event.params.listingId, tokens, amounts);
 }
 
 export function handleGotchiLendingCancel(event: GotchiLendingCancel): void {
@@ -114,10 +137,12 @@ function createNewGotchiLending(listingId: BigInt, eventAddress: Address): Gotch
   createNewUser(listingResult.lender.toHex());
   createNewUser(listingResult.borrower.toHex());
   createNewUser(listingResult.thirdParty.toHex());
+  createNewUser(listingResult.originalOwner.toHex());
 
   lending.lender = listingResult.lender.toHex();
   lending.borrower = listingResult.borrower.toHex();
   lending.thirdPartyAddress = listingResult.thirdParty.toHex();
+  lending.originalOwner = listingResult.originalOwner.toHex();
 
   lending.started = false;
   lending.cancelled = false;
@@ -138,6 +163,10 @@ function createNewUser(userAddress: string): void {
   let account = Account.load(userAddress);
   if (!account) {
     account = new Account(userAddress);
+    account.timesBorrowed = BigInt.zero();
+    account.timesBorrowedAndEarned = BigInt.zero();
+    account.timesLent = BigInt.zero();
+    account.currentBorrowedCount = BigInt.zero();
     account.save();
   }
 }
@@ -160,6 +189,12 @@ export function createOrUpdateWhitelist(id: BigInt, event: ethereum.Event): Whit
     whitelist = new Whitelist(id.toString());
     whitelist.ownerAddress = result.owner;
     whitelist.name = name;
+    whitelist.claimedFUD = BigInt.zero();
+    whitelist.claimedFOMO = BigInt.zero();
+    whitelist.claimedALPHA = BigInt.zero();
+    whitelist.claimedKEK = BigInt.zero();
+    whitelist.fudEquivalent = BigInt.zero();
+    whitelist.totalAlchemica = BigInt.zero();
   }
 
   whitelist.members = members.map<Bytes>(e => e);

@@ -2,6 +2,10 @@ type Account @entity {
   id: ID!
   gotchisLent: [GotchiLending!] @derivedFrom(field: "lender")
   gotchisBorrowed: [GotchiLending!] @derivedFrom(field: "borrower")
+  timesBorrowed: BigInt!
+  timesBorrowedAndEarned: BigInt!
+  timesLent: BigInt!
+  currentBorrowedCount: BigInt!
 }
 
 type GotchiLending @entity {
@@ -21,9 +25,10 @@ type GotchiLending @entity {
 
   whitelist: Whitelist
 
-  lender: Account
-  borrower: Account
+  lender: Account!
+  borrower: Account!
   thirdPartyAddress: Account
+  originalOwner: Account
 
   started: Boolean!
   cancelled: Boolean!
